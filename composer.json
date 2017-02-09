@@ -1,5 +1,5 @@
 {
-  "name": "BR0kEN-/deploy-revision",
+  "name": "deploy/deploy-revision",
   "type": "library",
   "homepage": "https://github.com/BR0kEN-/deploy-revision",
   "description": "Deploy new code revision by performing operations from YAML playbooks.",

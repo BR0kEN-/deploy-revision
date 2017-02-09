@@ -5,7 +5,7 @@ Create a YAML playbook, define a code revision, specify upgrade path as commands
 ## Installation
 
 ```shell
-composer require BR0kEN/deploy-revision:1.*
+composer require deploy/deploy-revision:1.*
 ```
 
 ## Usage
