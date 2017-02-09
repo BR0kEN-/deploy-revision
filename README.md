@@ -18,7 +18,7 @@ commands:
   lush_website_at:
     140:
       - "drush updb"
-  # It's predefined namespace for commands which should be run everywhere and every time.
+  # It's predefined namespace for commands which should be run everywhere.
   global:
     89:
       - "drush cc all"
@@ -26,17 +26,23 @@ commands:
       - "drush cc drush"
       - "print bla bla"
 
-# The order of commands for execution will looks like:
-# - drush cc all - will be removed because we have "drush updb".
-# - drush cc drush
-# - print bla bla
-# - drush updb
+# The order of commands for execution will looks like (only in case if current code version is lower than defined):
+# - For "lush_website_at" environment:
+#   - drush cc all - will be removed because we have "drush updb".
+#   - drush cc drush
+#   - print bla bla
+#   - drush updb
+#
+# - For "global" environment:
+#   - drush cc all
+#   - drush cc drush
+#   - print bla bla
 ```
 
 Initialize the library at start.
 
 ```php
-require_once 'deploy-revision/vendor/autoload.php';
+require_once 'vendor/autoload.php';
 
 use DeployRevision\DeployRevision;
 
@@ -124,7 +130,3 @@ Save new revision ID.
 ```php
 $deployment->commit();
 ```
-
-## To do
-
-- [ ] Improve documentation

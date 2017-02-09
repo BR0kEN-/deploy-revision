@@ -7,7 +7,7 @@ use DeployRevision\YamlInterface;
 use DeployRevision\WorkerInterface;
 use DeployRevision\DeployRevision;
 
-class WorkerTest extends \PHPUnit_Framework_TestCase
+class DeployRevisionTest extends \PHPUnit_Framework_TestCase
 {
     use DataProviders;
 
@@ -25,6 +25,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Get Worker with loaded tasks for further deployment.
+     *
      * @param string[] $fixtures
      * @param string|null $environment
      * @param string|null $versionFile
@@ -42,6 +44,14 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         return $worker;
     }
 
+    /**
+     * Get mock of Worker.
+     *
+     * @param array $arguments
+     *   List of arguments for worker's instantiation.
+     *
+     * @return \PHPUnit_Framework_MockObject_MockObject
+     */
     protected function getWorkerMock(array $arguments)
     {
         $workerMockBuilder = $this->getMockBuilder(Worker::class);
@@ -50,6 +60,11 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         return $workerMockBuilder->getMock();
     }
 
+    /**
+     * Get mock of YamlInterface.
+     *
+     * @return \PHPUnit_Framework_MockObject_MockObject
+     */
     protected function getYamlInterfaceMock()
     {
         return $this
@@ -59,6 +74,29 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Get list of deployment tasks to be performed and worker instance.
+     *
+     * @param string[] $fixtures
+     * @param string|null $environment
+     * @param string|null $versionFile
+     *
+     * @return array
+     */
+    protected function getDeploymentCommands(array $fixtures, $environment = null, $versionFile = null)
+    {
+        $worker = $this->getWorker($fixtures, $environment, $versionFile);
+        $actual = [];
+
+        $worker->deploy(function ($command) use (&$actual) {
+            $actual[] = $command;
+        });
+
+        return [$actual, $worker];
+    }
+
+    /**
+     * Ensure that deployment worker implements WorkerInterface.
+     *
      * @expectedException \LogicException
      * @expectedExceptionMessageRegExp /^Service ".*" must implement the ".*" interface$/
      */
@@ -73,6 +111,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that deployment worker instantiates correctly.
+     *
      * @param string $environment
      * @param string $versionFile
      * @param int $version
@@ -104,6 +144,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that DI container allows to override YAML parser.
+     *
      * @param string $parser
      * @param string[] $fixtures
      * @param string[] $expected
@@ -121,6 +163,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that an exception will be thrown if YAML parser is not available.
+     *
      * @expectedException \RuntimeException
      * @expectedExceptionMessageRegExp /YAML parser "\w+" is not available/
      */
@@ -133,6 +177,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure integrity of code versions.
+     *
      * @param string[] $fixtures
      * @param string $environment
      * @param int $expectedNewVersion
@@ -153,15 +199,19 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that deployment tasks are plain strings.
+     *
      * @expectedException \RuntimeException
      * @expectedExceptionMessageRegExp /Complex value cannot be a command: .+?/
      */
     public function testDeployBrokenPlaybook()
     {
-        $this->getWorker(['disallowed-structure.yml'])->deploy(function ($command) {
-        });
+        $this->getDeploymentCommands(['disallowed-structure.yml']);
     }
 
+    /**
+     * Ensure that deployment tasks will be skipped if current version of code is greater than specified by tasks.
+     */
     public function testDeploySkipVersion()
     {
         $worker = $this->deploy->getWorker();
@@ -187,6 +237,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that order of deployment tasks builds correctly.
+     *
      * @param string $environment
      * @param string[] $fixtures
      * @param string[] $expected
@@ -195,17 +247,14 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testDeployOrdering($environment, array $fixtures, array $expected)
     {
-        $worker = $this->getWorker($fixtures, $environment);
-        $actual = [];
-
-        $worker->deploy(function ($command) use (&$actual) {
-            $actual[] = $command;
-        });
+        list($actual) = $this->getDeploymentCommands($fixtures, $environment);
 
         static::assertSame($expected, $actual);
     }
 
     /**
+     * Ensure that filtering of deployment tasks and resolver works properly.
+     *
      * @param string $environment
      * @param string[] $fixtures
      * @param string[] $expected
@@ -237,6 +286,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that version of code cannot be saved without deployment.
+     *
      * @expectedException \RuntimeException
      * @expectedExceptionMessageRegExp /^Deployment has not been performed$/
      */
@@ -246,20 +297,21 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure exception will be thrown when version of code cannot be saved.
+     *
      * @expectedException \RuntimeException
      * @expectedExceptionMessageRegExp /^Cannot save the version of code to "\/etc\/deploy-revision-global" file$/
      */
     public function testDeployCommitNonWritableVersionFile()
     {
-        $worker = $this->getWorker(['tasks.yml'], null, '/etc/deploy-revision');
-
-        $worker->deploy(function ($command) {
-        });
+        list(, $worker) = $this->getDeploymentCommands(['tasks.yml'], null, '/etc/deploy-revision');
 
         $worker->commit();
     }
 
     /**
+     * Ensure that version of code will be accurately saved.
+     *
      * @param string $environment
      * @param string $versionFile
      *
@@ -267,16 +319,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testDeployCommit($environment, $versionFile)
     {
-        $file = "$versionFile-$environment";
-
-        if (file_exists($file)) {
-            static::assertTrue(unlink($file));
-        }
-
-        $worker = $this->getWorker(['tasks.yml'], $environment, $versionFile);
-
-        $worker->deploy(function ($command) {
-        });
+        list(, $worker) = $this->getDeploymentCommands(['tasks.yml'], $environment, $versionFile);
 
         $worker->commit();
     }
