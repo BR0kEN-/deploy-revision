@@ -6,6 +6,8 @@ services:
         class: DeployRevision\Yaml
     deploy_revision.worker:
         class: DeployRevision\Worker
+        # Create new instance on every appeal to container.
+        scope: prototype
         arguments:
             - @deploy_revision.yaml
             - %deploy_revision.environment%

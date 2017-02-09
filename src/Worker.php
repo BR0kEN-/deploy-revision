@@ -5,6 +5,12 @@ namespace DeployRevision;
 class Worker implements WorkerInterface
 {
     /**
+     * Indicates whether deployment was executed.
+     *
+     * @var bool
+     */
+    private $deployed = false;
+    /**
      * Environment ID.
      *
      * @var string
@@ -47,7 +53,7 @@ class Worker implements WorkerInterface
     public function __construct(YamlInterface $yaml, $environment, $versionFile)
     {
         if (!$yaml->isAvailable()) {
-            throw new \RuntimeException(sprintf('YAML parser "%s" is not available.', get_class($yaml)));
+            throw new \RuntimeException(sprintf('YAML parser "%s" is not available', get_class($yaml)));
         }
 
         $this->yaml = $yaml;
@@ -62,7 +68,7 @@ class Worker implements WorkerInterface
     /**
      * {@inheritdoc}
      */
-    public function readTasks($path)
+    public function read($path)
     {
         if (is_dir($path)) {
             foreach (new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS) as $path => $file) {
@@ -71,6 +77,7 @@ class Worker implements WorkerInterface
         } elseif (file_exists($path)) {
             $this->processPlaybook($path);
         }
+        // @todo Add reporting for non existent files.
     }
 
     /**
@@ -156,6 +163,7 @@ class Worker implements WorkerInterface
 
         // Do not allow to deploy once again accidentally.
         $this->commands = [];
+        $this->deployed = true;
     }
 
     /**
@@ -163,14 +171,18 @@ class Worker implements WorkerInterface
      */
     public function commit()
     {
-        if (!file_put_contents($this->versionFile, $this->newCodeVersion)) {
-            throw new \RuntimeException(sprintf('Cannot save the version of code to "%s" file.', $this->versionFile));
+        if (!$this->deployed) {
+            throw new \RuntimeException('Deployment has not been performed');
+        }
+
+        if (!@file_put_contents($this->versionFile, $this->newCodeVersion)) {
+            throw new \RuntimeException(sprintf('Cannot save the version of code to "%s" file', $this->versionFile));
         }
     }
 
     protected function processPlaybook($path)
     {
-        if ('yml' !== pathinfo($path, PATHINFO_EXTENSION)) {
+        if (!in_array(pathinfo($path, PATHINFO_EXTENSION), ['yaml', 'yml'])) {
             return;
         }
 

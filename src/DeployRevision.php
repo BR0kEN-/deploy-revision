@@ -76,6 +76,6 @@ final class DeployRevision
             return $service;
         }
 
-        throw new \LogicException(sprintf('Service "%s" must implement the "%s" interface.', $id, $interface));
+        throw new \LogicException(sprintf('Service "%s" must implement the "%s" interface', $id, $interface));
     }
 }

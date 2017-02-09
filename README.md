@@ -75,8 +75,8 @@ Look for `*.yml` playbooks inside a directory and for tasks in particular file.
 
 ```php
 $deployment = $deploy->getWorker();
-$deployment->readTasks('../lush_deploy.yml');
-$deployment->readTasks('../lush_deploy');
+$deployment->read('../lush_deploy.yml');
+$deployment->read('../lush_deploy');
 ```
 
 Set an environment ID and/or path to file where revision ID should be stored (or duplicated, from DB for instance).
@@ -88,16 +88,16 @@ $deployment = $deploy->getWorker('lush_website_at', 'private://revisions/revisio
 Filter commands. Callback should return the command for deletion.
 
 ```php
-$deployment->filter(function ($command, array $existing_commands, callable $resolver) {
+$deployment->filter(function ($command, array $commands, callable $resolver) {
     // Remove "drush cc css-js" since "drush updb" will do the job for it.
-    if ('drush cc css-js' === $command && isset($existing_commands['drush updb'])) {
-        return 'drush cc css-js'; 
+    if ('drush cc css-js' === $command && isset($commands['drush updb'])) {
+        return $command; 
     }
 
-    // Remove all previously added "cc all" from the list.
-    return $resolver(true, ['drush updb'], ['cc all'])
-        // Remove newly added "cc all" if "updb" in the list.
-        ?: $resolver(false, ['cc all'], ['drush updb']); 
+    // Remove all previously added "drush cc all" from the list if "drush updb" exists.
+    return $resolver(true, ['drush updb'], ['drush cc all'])
+        // Remove newly added "drush cc all" if "drush updb" in the list.
+        ?: $resolver(false, ['drush cc all'], ['drush updb']); 
 });
 ```
 
@@ -127,5 +127,4 @@ $deployment->commit();
 
 ## To do
 
-- [ ] Add tests
 - [ ] Improve documentation

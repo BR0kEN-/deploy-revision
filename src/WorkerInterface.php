@@ -18,7 +18,7 @@ interface WorkerInterface
      * @param string $path
      *   Path to single playbook or directory with them.
      */
-    public function readTasks($path);
+    public function read($path);
 
     /**
      * @return int

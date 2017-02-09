@@ -3,9 +3,9 @@ commands:
     121:
       - "drush cc css-js"
   lush_website_de:
-    92:
-      - "drush updb"
     122:
       - "drush cc all"
       - "drush updb"
       - "drush cc all"
+    92:
+      - "drush updb"
