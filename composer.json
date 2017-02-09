@@ -1,0 +1,41 @@
+{
+  "name": "BR0kEN-/deploy-revision",
+  "type": "library",
+  "homepage": "https://github.com/BR0kEN-/deploy-revision",
+  "description": "Deploy new code revision by performing operations from YAML playbooks.",
+  "license": "MIT",
+  "keywords": [
+    "php",
+    "yaml",
+    "deploy",
+    "revision"
+  ],
+  "authors": [
+    {
+      "name": "Sergii Bondarenko",
+      "email": "sb@firstvector.org"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.9",
+    "symfony/yaml": "2.*",
+    "symfony/config": "2.*",
+    "symfony/dependency-injection": "2.*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "4 - 5"
+  },
+  "autoload": {
+    "psr-4": {
+      "DeployRevision\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DeployRevision\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "bin-dir": "bin/"
+  }
+}

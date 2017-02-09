@@ -1,0 +1,12 @@
+parameters:
+    deploy_revision.environment: global
+    deploy_revision.version_file: /tmp/deploy-revision
+services:
+    deploy_revision.yaml:
+        class: DeployRevision\Yaml
+    deploy_revision.worker:
+        class: DeployRevision\Worker
+        arguments:
+            - @deploy_revision.yaml
+            - %deploy_revision.environment%
+            - %deploy_revision.version_file%

@@ -1,0 +1,16 @@
+/*
+
+# Hidden files.
+!.git*
+
+# Regular files.
+!composer.json
+!phpunit.xml
+
+# Directories.
+!src/
+!tests/
+
+# File extensions.
+!*.md
+!*.yml

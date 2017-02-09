@@ -1,0 +1,5 @@
+commands:
+  global:
+    121:
+      - "drush cc drush"
+      - "print bla bla"
