@@ -76,9 +76,6 @@ class Worker implements WorkerInterface
             // Guarantee alphabetical order on every file system.
             ksort($files);
 
-            // @todo Debug ordering on Scrutinizer.
-            var_dump($files);
-
             foreach ($files as $path => $file) {
                 $this->processPlaybook($path);
             }
