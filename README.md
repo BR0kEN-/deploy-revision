@@ -3,7 +3,7 @@
 Create a YAML playbook, define a code revision, specify upgrade path as commands for performing and distribute them between environments.
 
 [![Build Status](https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/badges/build.png?b=master&style=flat-square)](https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/build-status/master)
-[![Code Coverage](https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/badges/coverage.png?b=master&style=flat-square)](https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/?branch=master)
+[![Code coverage](https://img.shields.io/scrutinizer/coverage/g/BR0kEN-/deploy-revision/master.svg?style=flat-square)](https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/?branch=master)
 [![Quality Score](https://img.shields.io/scrutinizer/g/BR0kEN-/deploy-revision.svg?style=flat-square)](https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision)
 [![Coding standards](https://styleci.io/repos/81422463/shield?branch=master)](https://styleci.io/repos/81422463)
 [![Total Downloads](https://img.shields.io/packagist/dt/deploy/deploy-revision.svg?style=flat-square)](https://packagist.org/packages/deploy/deploy-revision)
