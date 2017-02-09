@@ -20,14 +20,17 @@ commands:
       - "drush updb"
   # It's predefined namespace for commands which should be run everywhere and every time.
   global:
+    89:
+      - "drush cc all"
     121:
       - "drush cc drush"
       - "print bla bla"
 
 # The order of commands for execution will looks like:
-# - drush updb
+# - drush cc all - will be removed because we have "drush updb".
 # - drush cc drush
 # - print bla bla
+# - drush updb
 ```
 
 Initialize the library at start.
