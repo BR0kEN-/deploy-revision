@@ -19,7 +19,7 @@ class Worker implements WorkerInterface
     /**
      * List of collected commands from playbooks.
      *
-     * @var array[]
+     * @var array
      */
     protected $commands = [];
     /**
@@ -207,7 +207,7 @@ class Worker implements WorkerInterface
                 // Group commands by version to guarantee exact order.
                 $this->commands += [$version => []];
                 $this->commands[$version] = array_merge($this->commands[$version], array_filter((array) $commands));
-                $this->newCodeVersion = max($this->newCodeVersion, $version);
+                $this->newCodeVersion = (int) max($this->newCodeVersion, $version);
             }
         }
     }
