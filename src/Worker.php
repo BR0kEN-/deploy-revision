@@ -71,14 +71,15 @@ class Worker implements WorkerInterface
     public function read($path)
     {
         if (is_dir($path)) {
-            $iterator = new \ArrayIterator(iterator_to_array(
-                new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS)
-            ));
+            $files = iterator_to_array(new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS));
 
             // Guarantee alphabetical order on every file system.
-            $iterator->ksort();
+            ksort($files);
 
-            foreach ($iterator as $path => $file) {
+            // @todo Debug ordering on Scrutinizer.
+            var_dump($files);
+
+            foreach ($files as $path => $file) {
                 $this->processPlaybook($path);
             }
         } elseif (file_exists($path)) {
