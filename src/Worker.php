@@ -78,13 +78,10 @@ class Worker implements WorkerInterface
     public function read($path)
     {
         if (is_dir($path)) {
-            /**
-             * Using just "\FilesystemIterator" we cannot be sure that correct ordering will be gained. On
-             * TravisCI, for instance, ordering always was correct for every PHP version, but on Scrutinizer
-             * was the cases when this valuable thing has not been achieved.
-             *
-             * @link https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/inspections/8b28f584-b923-4a47-96af-90f5b31f4a32
-             */
+            // Using just "\FilesystemIterator" we cannot be sure that correct ordering will be gained. On
+            // TravisCI, for instance, ordering always was correct for every PHP version, but on Scrutinizer
+            // was the cases when this valuable thing has not been achieved.
+            // https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/inspections/8b28f584-b923-4a47-96af-90f5b31f4a32
             $files = iterator_to_array(new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS));
 
             // Guarantee alphabetical ordering on every file system.
