@@ -138,3 +138,10 @@ Save new revision ID.
 ```php
 $deployment->commit();
 ```
+
+## Notes
+
+- All tasks from playbooks must be handled inside of deployment callback. This means that an implementation for recognizing the commands and for executing them should be done. Otherwise you'll not have any effect putting the commands there.
+- Tasks collected in order you running the `->read()` method. If you are reading `test1.yml` and `test2.yml` and both files have the same revision number inside, then commands from first file will be located above ones from second.
+
+  Reading of the directory will be done in alphabetical order. If multiple playbooks have the same revision numbers, then the only way you can affect on ordering - is to set file names in correct order.
