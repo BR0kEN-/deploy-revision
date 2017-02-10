@@ -145,3 +145,23 @@ $deployment->commit();
 - Tasks collected in order you running the `->read()` method. If you are reading `test1.yml` and `test2.yml` and both files have the same revision number inside, then commands from first file will be located above ones from second.
 
   Reading of the directory will be done in alphabetical order. If multiple playbooks have the same revision numbers, then the only way you can affect on ordering - is to set file names in correct order.
+
+## Testing
+
+Run PHPUnit tests locally.
+
+```shell
+./bin/phpunit --coverage-text
+```
+
+### Scrutinizer CI
+
+Used for generating [tests coverage](.scrutinizer.yml#L4-L10).
+
+### Travis CI
+
+Used for running tests on [various PHP versions](.travis.yml#L4-L7).
+
+### Style CI
+
+Used for verifying [coding standards](.styleci.yml#L1). Actually **Scrutinizer** doing this as well.

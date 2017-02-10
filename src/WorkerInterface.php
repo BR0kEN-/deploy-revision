@@ -7,12 +7,14 @@ interface WorkerInterface
     /**
      * @param YamlInterface $yaml
      *   YAML parser.
+     * @param LoggerInterface $logger
+     *   Messages logger.
      * @param string $environment
      *   Unique environment ID to perform particular deployment.
      * @param string $versionFile
      *   Path to file where latest deployed version will be stored.
      */
-    public function __construct(YamlInterface $yaml, $environment, $versionFile);
+    public function __construct(YamlInterface $yaml, LoggerInterface $logger, $environment, $versionFile);
 
     /**
      * @param string $path

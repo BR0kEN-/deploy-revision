@@ -46,17 +46,24 @@ class Worker implements WorkerInterface
      * @var YamlInterface
      */
     protected $yaml;
+    /**
+     * Messages logger.
+     *
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(YamlInterface $yaml, $environment, $versionFile)
+    public function __construct(YamlInterface $yaml, LoggerInterface $logger, $environment, $versionFile)
     {
         if (!$yaml->isAvailable()) {
             throw new \RuntimeException(sprintf('YAML parser "%s" is not available', get_class($yaml)));
         }
 
         $this->yaml = $yaml;
+        $this->logger = $logger;
         $this->environment = $environment;
         $this->versionFile = "$versionFile-$environment";
 
@@ -71,9 +78,16 @@ class Worker implements WorkerInterface
     public function read($path)
     {
         if (is_dir($path)) {
+            /**
+             * Using just "\FilesystemIterator" we cannot be sure that correct ordering will be gained. On
+             * TravisCI, for instance, ordering always was correct for every PHP version, but on Scrutinizer
+             * was the cases when this valuable thing has not been achieved.
+             *
+             * @link https://scrutinizer-ci.com/g/BR0kEN-/deploy-revision/inspections/8b28f584-b923-4a47-96af-90f5b31f4a32
+             */
             $files = iterator_to_array(new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS));
 
-            // Guarantee alphabetical order on every file system.
+            // Guarantee alphabetical ordering on every file system.
             ksort($files);
 
             foreach ($files as $path => $file) {
@@ -81,8 +95,9 @@ class Worker implements WorkerInterface
             }
         } elseif (file_exists($path)) {
             $this->processPlaybook($path);
+        } else {
+            $this->logger->log(sprintf('Not file "%s" nor directory exists', $path));
         }
-        // @todo Add reporting for non existent files.
     }
 
     /**
@@ -177,7 +192,7 @@ class Worker implements WorkerInterface
     public function commit()
     {
         if (!$this->deployed) {
-            throw new \RuntimeException('Deployment has not been performed');
+            throw new \RuntimeException('Deployment has not been performed. Saving the revision will cause problems');
         }
 
         if (!@file_put_contents($this->versionFile, $this->newCodeVersion)) {

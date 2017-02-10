@@ -2,12 +2,14 @@
 
 namespace DeployRevision\Tests;
 
+use PHPUnit\Framework\TestCase;
 use DeployRevision\Worker;
-use DeployRevision\YamlInterface;
-use DeployRevision\WorkerInterface;
 use DeployRevision\DeployRevision;
+use DeployRevision\YamlInterface;
+use DeployRevision\LoggerInterface;
+use DeployRevision\WorkerInterface;
 
-class DeployRevisionTest extends \PHPUnit_Framework_TestCase
+class DeployRevisionTest extends TestCase
 {
     use DataProviders;
 
@@ -45,32 +47,41 @@ class DeployRevisionTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Get mock of Worker.
+     * @param string $environment
+     * @param string $versionFile
+     * @param bool $isYamlAvailable
      *
-     * @param array $arguments
-     *   List of arguments for worker's instantiation.
-     *
-     * @return \PHPUnit_Framework_MockObject_MockObject
+     * @return array<WorkerInterface, YamlInterface, LoggerInterface>
      */
-    protected function getWorkerMock(array $arguments)
+    protected function getMockedWorker($environment, $versionFile, $isYamlAvailable = true)
     {
-        $workerMockBuilder = $this->getMockBuilder(Worker::class);
-        $workerMockBuilder->setConstructorArgs($arguments);
+        /** @var \PHPUnit_Framework_MockObject_MockObject[] $mocks */
+        $mocks = [];
 
-        return $workerMockBuilder->getMock();
-    }
+        foreach ([
+            YamlInterface::class => ['isAvailable', 'parse'],
+            LoggerInterface::class => ['log'],
+        ] as $class => $methods) {
+            $mocks[$class] = $this
+                ->getMockBuilder($class)
+                ->setMethods($methods)
+                ->getMock();
+        }
 
-    /**
-     * Get mock of YamlInterface.
-     *
-     * @return \PHPUnit_Framework_MockObject_MockObject
-     */
-    protected function getYamlInterfaceMock()
-    {
-        return $this
-            ->getMockBuilder(YamlInterface::class)
-            ->setMethods(['isAvailable', 'parse'])
-            ->getMock();
+        $mocks[YamlInterface::class]
+            ->method('isAvailable')
+            ->willReturn($isYamlAvailable);
+
+        $worker = $this
+            ->getMockBuilder(Worker::class)
+            ->setConstructorArgs([
+                $mocks[YamlInterface::class],
+                $mocks[LoggerInterface::class],
+                $environment,
+                $versionFile,
+            ]);
+
+        return [$worker->getMock(), $mocks[YamlInterface::class], $mocks[LoggerInterface::class]];
     }
 
     /**
@@ -107,6 +118,7 @@ class DeployRevisionTest extends \PHPUnit_Framework_TestCase
             ->getDefinition(DeployRevision::SERVICE)
             ->setClass(\stdClass::class);
 
+        // This test guarantees that arguments for worker constructor will always match required types.
         $this->deploy->getWorker();
     }
 
@@ -124,14 +136,11 @@ class DeployRevisionTest extends \PHPUnit_Framework_TestCase
         $versionFilePath = "$versionFile-$environment";
 
         static::assertSame(strlen($version), file_put_contents($versionFilePath, $version), 'Save dummy version');
-
-        $yaml = $this->getYamlInterfaceMock();
-        $yaml->method('isAvailable')->willReturn(true);
-
-        $worker = $this->getWorkerMock([$yaml, $environment, $versionFile]);
+        list($worker, $yaml, $logger) = $this->getMockedWorker($environment, $versionFile);
 
         foreach ([
             'yaml' => $yaml,
+            'logger' => $logger,
             'environment' => $environment,
             'versionFile' => $versionFilePath,
             'newCodeVersion' => $version,
@@ -170,10 +179,10 @@ class DeployRevisionTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstructorWithBrokenYamlParser()
     {
-        $yaml = $this->getYamlInterfaceMock();
-        $yaml->method('isAvailable')->willReturn(false);
-
-        $this->getWorkerMock([$yaml, 'global', '/tmp/deploy-revision']);
+        // Programmatically make YAML parser unavailable to make sure that exception will be thrown.
+        // Doesn't matter that environment and version file are set to "null" since YAML availability
+        // is (and should be) the very first check.
+        $this->getMockedWorker(null, null, false);
     }
 
     /**
@@ -237,6 +246,41 @@ class DeployRevisionTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensure that messages about trying to load tasks from non-existent files/directories will be printed.
+     *
+     * @param string[] $fixtures
+     * @param string|null $loggerClass
+     *
+     * @throws \Exception
+     *
+     * @expectedException \Exception
+     * @expectedExceptionMessageRegExp /^Not file ".*" nor directory exists$/
+     *
+     * @dataProvider providerDeployReadingNonExistent
+     */
+    public function testDeployReadingNonExistent(array $fixtures, $loggerClass)
+    {
+        $useDefaultLogger = null === $loggerClass;
+
+        // Default logger just prints a message. Put it into the buffer to throw as an exception.
+        if ($useDefaultLogger) {
+            ob_start();
+        } else {
+            // Ensure that DI container allows to override logger.
+            $this->deploy
+                ->getContainer()
+                ->getDefinition('deploy_revision.logger')
+                ->setClass($loggerClass);
+        }
+
+        $this->getWorker($fixtures);
+
+        if ($useDefaultLogger) {
+            throw new \Exception(ob_get_clean());
+        }
+    }
+
+    /**
      * Ensure that order of deployment tasks builds correctly.
      *
      * @param string $environment
@@ -289,7 +333,7 @@ class DeployRevisionTest extends \PHPUnit_Framework_TestCase
      * Ensure that version of code cannot be saved without deployment.
      *
      * @expectedException \RuntimeException
-     * @expectedExceptionMessageRegExp /^Deployment has not been performed$/
+     * @expectedExceptionMessageRegExp /^Deployment has not been performed\. Saving the revision will cause problems$/
      */
     public function testDeployCommitWithoutDeploy()
     {

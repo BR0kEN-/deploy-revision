@@ -3,6 +3,7 @@
 namespace DeployRevision\Tests;
 
 use DeployRevision\Tests\Parsers\Spyc;
+use DeployRevision\Tests\Loggers\Throwable;
 
 trait DataProviders
 {
@@ -27,6 +28,14 @@ trait DataProviders
         return [
             [['tasks.yml', 'file-without-commands.yml'], null, 121, 0],
             [['tasks', 'wrong-file-extension.ylm'], 'lush_website_de', 122, 0],
+        ];
+    }
+
+    public function providerDeployReadingNonExistent()
+    {
+        return [
+            [['missing-file.yml'], null],
+            [['missing-directory'], Throwable::class],
         ];
     }
 
