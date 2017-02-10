@@ -160,7 +160,7 @@ Used for generating [tests coverage](.scrutinizer.yml#L4-L10).
 
 ### Travis CI
 
-Used for running tests on [various PHP versions](.travis.yml#L4-L7).
+Used for running tests on [various PHP versions](.travis.yml#L4-L8).
 
 ### Style CI
 
