@@ -18,4 +18,13 @@ interface YamlInterface
      *   Structured data.
      */
     public function parse($content);
+
+    /**
+     * @param array $content
+     *   Structured data.
+     *
+     * @return string
+     *   YAML document.
+     */
+    public function dump(array $content);
 }

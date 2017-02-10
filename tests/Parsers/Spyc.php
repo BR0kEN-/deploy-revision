@@ -21,4 +21,12 @@ class Spyc implements YamlInterface
     {
         return \Spyc::YAMLLoadString($content);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function dump(array $content)
+    {
+        return \Spyc::YAMLDump($content);
+    }
 }

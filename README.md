@@ -36,7 +36,7 @@ commands:
 
 # The order of commands for execution will looks like (only in case if current code version is lower than defined):
 # - For "lush_website_at" environment:
-#   - drush cc all - will be removed because we have "drush updb".
+#   - drush cc all - will be removed because we have "drush updb" (if logic like in "filter()" below will be implemented).
 #   - drush cc drush
 #   - print bla bla
 #   - drush updb
@@ -77,6 +77,14 @@ class SpycYaml implements YamlInterface
     {
         return Spyc::YAMLLoadString($content);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function dump(array $content)
+    {
+        return \Spyc::YAMLDump($content);
+    }
 }
 
 $deploy
@@ -89,7 +97,9 @@ Look for `*.yml` playbooks inside a directory and for tasks in particular file.
 
 ```php
 $deployment = $deploy->getWorker();
+// Read particular playbook.
 $deployment->read('../lush_deploy.yml');
+// Read playbooks within directory.
 $deployment->read('../lush_deploy');
 ```
 
@@ -141,7 +151,7 @@ $deployment->commit();
 
 ## Notes
 
-- All tasks from playbooks must be handled inside of deployment callback. This means that an implementation for recognizing the commands and for executing them should be done. Otherwise you'll not have any effect putting the commands there.
+- All tasks from playbooks must be handled inside of deployment callback. This means that an implementation for recognizing the commands and for executing them should be done. Otherwise you'll not have any effect placing commands inside playbooks.
 - Tasks collected in order you running the `->read()` method. If you are reading `test1.yml` and `test2.yml` and both files have the same revision number inside, then commands from first file will be located above ones from second.
 
   Reading of the directory will be done in alphabetical order. If multiple playbooks have the same revision numbers, then the only way you can affect on ordering - is to set file names in correct order.

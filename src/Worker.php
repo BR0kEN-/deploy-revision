@@ -41,6 +41,12 @@ class Worker implements WorkerInterface
      */
     protected $newCodeVersion = 0;
     /**
+     * An array where keys are playbook names and values are latest deployed versions.
+     *
+     * @var int[]
+     */
+    protected $completed = [];
+    /**
      * YAML parser.
      *
      * @var YamlInterface
@@ -68,7 +74,10 @@ class Worker implements WorkerInterface
         $this->versionFile = "$versionFile-$environment";
 
         if (file_exists($this->versionFile)) {
-            $this->newCodeVersion = $this->currentCodeVersion = (int) file_get_contents($this->versionFile);
+            $info = $this->yaml->parse(file_get_contents($this->versionFile));
+
+            $this->completed = isset($info['completed']) ? $info['completed'] : [];
+            $this->newCodeVersion = $this->currentCodeVersion = isset($info['version']) ? (int) $info['version'] : 0;
         }
     }
 
@@ -192,7 +201,10 @@ class Worker implements WorkerInterface
             throw new \RuntimeException('Deployment has not been performed. Saving the revision will cause problems');
         }
 
-        if (!@file_put_contents($this->versionFile, $this->newCodeVersion)) {
+        if (!@file_put_contents($this->versionFile, $this->yaml->dump([
+            'version' => $this->newCodeVersion,
+            'completed' => $this->completed,
+        ]))) {
             throw new \RuntimeException(sprintf('Cannot save the version of code to "%s" file', $this->versionFile));
         }
     }
@@ -217,13 +229,14 @@ class Worker implements WorkerInterface
 
             foreach ($commands_group as $version => $commands) {
                 // Skip code actions that were already run.
-                if ($version <= $this->currentCodeVersion) {
+                if ($version <= $this->currentCodeVersion && isset($this->completed[$path])) {
                     continue;
                 }
 
                 // Group commands by version to guarantee exact order.
                 $this->commands += [$version => []];
                 $this->commands[$version] = array_merge($this->commands[$version], array_filter((array) $commands));
+                $this->completed[$path] = $version;
                 $this->newCodeVersion = (int) max($this->newCodeVersion, $version);
             }
         }

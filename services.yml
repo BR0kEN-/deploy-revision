@@ -1,17 +1,17 @@
 parameters:
-    deploy_revision.environment: global
-    deploy_revision.version_file: /tmp/deploy-revision
+  deploy_revision.environment: global
+  deploy_revision.version_file: /tmp/deploy-revision
 services:
-    deploy_revision.yaml:
-        class: DeployRevision\Yaml
-    deploy_revision.logger:
-        class: DeployRevision\Logger
-    deploy_revision.worker:
-        class: DeployRevision\Worker
-        # Create new instance on every appeal to container.
-        scope: prototype
-        arguments:
-            - @deploy_revision.yaml
-            - @deploy_revision.logger
-            - %deploy_revision.environment%
-            - %deploy_revision.version_file%
+  deploy_revision.yaml:
+    class: DeployRevision\Yaml
+  deploy_revision.logger:
+    class: DeployRevision\Logger
+  deploy_revision.worker:
+    class: DeployRevision\Worker
+    # Create new instance on every appeal to container.
+    scope: prototype
+    arguments:
+      - @deploy_revision.yaml
+      - @deploy_revision.logger
+      - %deploy_revision.environment%
+      - %deploy_revision.version_file%

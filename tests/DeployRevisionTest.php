@@ -3,9 +3,9 @@
 namespace DeployRevision\Tests;
 
 use PHPUnit\Framework\TestCase;
+use DeployRevision\Yaml;
 use DeployRevision\Worker;
 use DeployRevision\DeployRevision;
-use DeployRevision\YamlInterface;
 use DeployRevision\LoggerInterface;
 use DeployRevision\WorkerInterface;
 
@@ -59,7 +59,7 @@ class DeployRevisionTest extends TestCase
         $mocks = [];
 
         foreach ([
-            YamlInterface::class => ['isAvailable', 'parse'],
+            Yaml::class => ['isAvailable'],
             LoggerInterface::class => ['log'],
         ] as $class => $methods) {
             $mocks[$class] = $this
@@ -68,20 +68,20 @@ class DeployRevisionTest extends TestCase
                 ->getMock();
         }
 
-        $mocks[YamlInterface::class]
+        $mocks[Yaml::class]
             ->method('isAvailable')
             ->willReturn($isYamlAvailable);
 
         $worker = $this
             ->getMockBuilder(Worker::class)
             ->setConstructorArgs([
-                $mocks[YamlInterface::class],
+                $mocks[Yaml::class],
                 $mocks[LoggerInterface::class],
                 $environment,
                 $versionFile,
             ]);
 
-        return [$worker->getMock(), $mocks[YamlInterface::class], $mocks[LoggerInterface::class]];
+        return [$worker->getMock(), $mocks[Yaml::class], $mocks[LoggerInterface::class]];
     }
 
     /**
@@ -135,7 +135,13 @@ class DeployRevisionTest extends TestCase
     {
         $versionFilePath = "$versionFile-$environment";
 
-        static::assertSame(strlen($version), file_put_contents($versionFilePath, $version), 'Save dummy version');
+        // 25 - is an approximate amout of bytes which should be written by "file_put_contents()".
+        // @see Worker:commit()
+        static::assertGreaterThan(25, file_put_contents($versionFilePath, (new Yaml)->dump([
+            'version' => $version,
+            'completed' => [],
+        ])));
+
         list($worker, $yaml, $logger) = $this->getMockedWorker($environment, $versionFile);
 
         foreach ([
@@ -224,23 +230,30 @@ class DeployRevisionTest extends TestCase
     public function testDeploySkipVersion()
     {
         $worker = $this->deploy->getWorker();
+        $playbook = __DIR__ . '/fixtures/tasks.yml';
         $reflection = new \ReflectionClass($worker);
+        $spoofedVersion = 2000;
         $commands = [];
 
         // Set current code version to extremely big value to skip tasks with lower version.
-        $currentCodeVersion = $reflection->getProperty('currentCodeVersion');
-        $currentCodeVersion->setAccessible(true);
-        $currentCodeVersion->setValue($worker, 2000);
-        $currentCodeVersion->setAccessible(false);
+        foreach ([
+            'completed' => [$playbook => $spoofedVersion],
+            'currentCodeVersion' => $spoofedVersion,
+        ] as $property => $value) {
+            $property = $reflection->getProperty($property);
+            $property->setAccessible(true);
+            $property->setValue($worker, $value);
+            $property->setAccessible(false);
+        }
 
-        $worker->read(__DIR__ . '/fixtures/tasks.yml');
+        $worker->read($playbook);
 
         $worker->deploy(function ($command) use (&$commands) {
             $commands[] = $command;
         });
 
         // Verify current version of code.
-        static::assertSame(2000, $worker->getCurrentCodeVersion());
+        static::assertSame($spoofedVersion, $worker->getCurrentCodeVersion());
         // Ensure that no tasks will be deployed.
         static::assertEmpty($commands);
     }
