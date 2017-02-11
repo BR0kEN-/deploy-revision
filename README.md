@@ -75,7 +75,7 @@ class SpycYaml implements YamlInterface
      */
     public function parse($content)
     {
-        return Spyc::YAMLLoadString($content);
+        return \Spyc::YAMLLoadString($content);
     }
 
     /**
